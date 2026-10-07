@@ -11,4 +11,5 @@
     - POST -> enviar/criar
     - PUT/PATCH -> edição
     - DELETE -> deletar
+    
 
