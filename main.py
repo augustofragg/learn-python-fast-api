@@ -1,6 +1,4 @@
 import os
-from warnings import deprecated
-
 from fastapi import FastAPI
 from passlib.context import CryptContext
 from dotenv import load_dotenv
