@@ -18,7 +18,7 @@ async def autenticar():
 
 @auth_router.post("/criar_conta")
 async def criar_conta(usuario_schema:UsuarioSchema, session:Session=Depends(pegar_sessao)):
-    usuario = session.query(Usuario).filter(Usuario.email==usuario_schema.email).all()
+    usuario = session.query(Usuario).filter(Usuario.email==usuario_schema.email).first()
     if usuario:
         # Já existe um usuario com esse email
         raise HTTPException(status_code=400, detail="Email do usuário já cadastrado")
