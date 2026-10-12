@@ -1,15 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException
 from dependencies import pegar_sessao
 from models import Usuario
-from main import bcrypt_context
+from main import bcrypt_context, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from schemas import LoginSchema, UsuarioSchema
 from sqlalchemy.orm import Session
+from jose import jwt, JWTError
+from datetime import date, datetime, timedelta, timezone
 
 auth_router = APIRouter(prefix="/auth",tags=["Auth"])
 
 def criar_token(id_usuario):
-    token =  f'adaddadadad{id_usuario}'
-    return token
+    data_expericao = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    dic_info = {"sub":id_usuario,"exp":data_expericao}
+    
+    jwt_codificado = jwt.encode(dic_info,SECRET_KEY,ALGORITHM)
+    return jwt_codificado
+
+def autenticar_usuario(email:str, senha:str, session:Session):
+    usuario = session.query(Usuario).filter(Usuario.email == email).first()
+    usuario_senha = bcrypt_context.verify(senha,usuario.senha)
+
+    if not usuario:
+        return False
+    elif not usuario_senha:
+        return False
+    return usuario
+
 
 @auth_router.get("/")
 async def autenticar():
@@ -19,6 +35,7 @@ async def autenticar():
   
     return {"mensagem":"Você acessou a rota padrão de autenticação",
             "autenticado":False}
+
 
 @auth_router.post("/criar_conta")
 async def criar_conta(usuario_schema:UsuarioSchema, session:Session=Depends(pegar_sessao)):
@@ -36,7 +53,7 @@ async def criar_conta(usuario_schema:UsuarioSchema, session:Session=Depends(pega
 # login -> email e senha -> token JWT (Json Web Token) adffdafdff
 @auth_router.post("/login")
 async def login(login_schema:LoginSchema, session:Session=Depends(pegar_sessao)):
-    usuario = session.query(Usuario).filter(Usuario.email == login_schema.email).first()
+    usuario = autenticar_usuario(login_schema.email,login_schema.senha,session)
     if not usuario:
         raise HTTPException(status_code=400,detail="Usuário não encontrado")
     else:
